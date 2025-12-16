@@ -1,0 +1,30 @@
+# Ignore OAuth credentials
+client_secrets.json
+youtube_credentials.json
+token.pickle
+*.pickle
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Output files
+output/
+images/
+*.mp4
+*.jpg
+*.png
+
+# Keep audio directory structure
+!audio/.gitkeep
+audio/*.mp3
+audio/*.wav
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
