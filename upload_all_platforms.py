@@ -21,6 +21,7 @@ from upload_tiktok import upload_to_tiktok
 from upload_facebook import upload_to_facebook
 from upload_threads import upload_to_threads
 from upload_twitter import upload_to_twitter
+from upload_vk import upload_to_vk
 
 def main():
     """Upload video to all configured platforms."""
@@ -161,6 +162,24 @@ Explore as leis, os costumes, as tradições e as figuras emblemáticas que marc
             results['twitter'] = None
     else:
         print("⏭️  Skipping Twitter (credentials not set)")
+    
+    # Upload to VK
+    if all([
+        os.getenv('VK_ACCESS_TOKEN'),
+        os.getenv('VK_GROUP_ID')
+    ]):
+        print("\n" + "="*60)
+        print("🔵 Uploading to VK...")
+        print("="*60)
+        try:
+            result = upload_to_vk(video_file, title, description)
+            results['vk'] = result
+            print(f"✅ VK: Uploaded successfully")
+        except Exception as e:
+            print(f"❌ VK failed: {e}")
+            results['vk'] = None
+    else:
+        print("⏭️  Skipping VK (credentials not set)")
     
     # Summary
     print("\n" + "="*60)

@@ -10,11 +10,19 @@ This script:
 import requests
 from urllib.parse import quote
 from pathlib import Path
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 def generate_new_topics(count=100):
-    """Generate new Portuguese topics about ancient women."""
+    """Generate new Portuguese topics about ancient women using paid Pollinations API."""
     
-    base_url = "https://text.pollinations.ai/"
+    api_key = os.getenv("POLLINATIONS_API_KEY")
+    if not api_key:
+        raise ValueError("POLLINATIONS_API_KEY environment variable is required for paid API")
+    
     system = (
         "Você é um historiador especializado na história das mulheres nas civilizações antigas. "
         f"Crie uma lista de {count} tópicos únicos em português. "
@@ -25,11 +33,17 @@ def generate_new_topics(count=100):
     
     prompt = f"Crie {count} tópicos únicos sobre mulheres nas civilizações antigas"
     
-    url = base_url + quote(prompt)
-    params = {"model": "openai", "temperature": 0.9, "system": system}
+    url = f"https://gen.pollinations.ai/text/{quote(prompt)}"
+    headers = {"Authorization": f"Bearer {api_key}"}
+    params = {
+        "model": "nova-fast",
+        "temperature": 0.9,
+        "system": system,
+        "json": False
+    }
     
     print(f"[topics] Generating {count} new Portuguese topics...")
-    r = requests.get(url, params=params, timeout=120)
+    r = requests.get(url, headers=headers, params=params, timeout=120)
     r.raise_for_status()
     
     # Parse topics

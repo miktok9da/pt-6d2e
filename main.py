@@ -7,6 +7,10 @@ from pathlib import Path
 from urllib.parse import quote
 import requests
 import time
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # ---------------- CONFIG ----------------
 
@@ -52,8 +56,11 @@ def choose_topic_for_today():
     return topics[today.toordinal() % len(topics)]
 
 def generate_story_with_pollinations(topic: str) -> str:
-    """Generate a short Portuguese story about ancient women's history."""
-    base_url = "https://text.pollinations.ai/"
+    """Generate a short Portuguese story about ancient women's history using paid Pollinations API."""
+    api_key = os.getenv("POLLINATIONS_API_KEY")
+    if not api_key:
+        raise ValueError("POLLINATIONS_API_KEY environment variable is required for paid API")
+
     system = (
         "Você é um historiador especializado na história das mulheres nas civilizações antigas. "
         "Escreva uma história curta e interessante de 30 segundos (80-130 palavras) em português. "
@@ -62,11 +69,17 @@ def generate_story_with_pollinations(topic: str) -> str:
     )
     prompt = f"Assunto: {topic}. Conte um fato histórico interessante."
 
-    url = base_url + quote(prompt)
-    params = {"model": "openai", "temperature": 1.0, "system": system}
+    url = f"https://gen.pollinations.ai/text/{quote(prompt)}"
+    headers = {"Authorization": f"Bearer {api_key}"}
+    params = {
+        "model": "nova-fast",
+        "temperature": 1.0,
+        "system": system,
+        "json": False
+    }
 
     print(f"[story] Generating Portuguese story for topic: {topic}")
-    r = requests.get(url, params=params, timeout=60)
+    r = requests.get(url, headers=headers, params=params, timeout=60)
     r.raise_for_status()
     text = r.text.strip()
 
@@ -123,22 +136,33 @@ def generate_image(scene: str, idx: int) -> Path:
     # Create unique seed for each image based on scene content + index
     seed = hash(scene + str(idx)) % 1000000
     
-    # Build detailed, high-quality prompt focusing on beautiful ancient women
+    # Build high-quality photorealistic prompt focusing on beautiful ancient women
     prompt = (
-        f"stunning beautiful woman in ancient times, {scene}, "
-        f"photorealistic portrait, elegant ancient clothing, "
-        f"dramatic cinematic lighting, highly detailed face and eyes, "
-        f"historical accuracy, professional photography, "
-        f"volumetric lighting, 8k quality, masterpiece, "
-        f"beautiful composition, vibrant colors, sharp focus"
+        f"stunning beautifully dressed woman from ancient civilization, {scene}, "
+        f"hyper-realistic portrait, extremely detailed facial features, "
+        f"intricate traditional ancient clothing with rich textures, "
+        f"professional studio lighting, dramatic shadows and highlights, "
+        f"RAW photography, photorealistic, 8K resolution, ultra-high detail, "
+        f"sharp focus, depth of field, bokeh, cinematic composition, "
+        f"masterpiece, award-winning photography, volumetric lighting, "
+        f"hyper-detailed skin texture, realistic eyes with catchlights, "
+        f"museum quality art, historical accuracy, elegant and graceful pose, "
+        f"appropriate for all audiences, clean and tasteful"
     )
     safe_prompt = quote(prompt)
     
-    # Include seed to ensure unique image
-    url = (
-        f"https://image.pollinations.ai/prompt/{safe_prompt}"
-        f"?width={IMAGE_WIDTH}&height={IMAGE_HEIGHT}&model={IMAGE_MODEL}&seed={seed}"
-    )
+    # Build URL with enhanced parameters for photorealism and safety
+    url = f"https://image.pollinations.ai/prompt/{safe_prompt}"
+    headers = {"Authorization": f"Bearer {os.getenv('POLLINATIONS_API_KEY')}"}
+    params = {
+        "width": IMAGE_WIDTH,
+        "height": IMAGE_HEIGHT,
+        "model": "flux",  # Use flux model
+        "seed": seed,
+        "safe": True,  # Enable strict content filtering to prevent NSFW (boolean)
+        "nologo": True,  # Explicitly request no watermarks
+        "negative_prompt": "worst quality, blurry, watermark, logo, text, signature, branded content, inappropriate, revealing, suggestive, nude, sexual, violence, blood, gore"
+    }
 
     out = IMAGES_DIR / f"scene_{idx:02d}.jpg"
     print(f"[image] Generating image {idx+1}/{NUM_IMAGES}: {scene[:50]}...")
@@ -148,7 +172,7 @@ def generate_image(scene: str, idx: int) -> Path:
     max_retries = 5
     for attempt in range(max_retries):
         try:
-            r = requests.get(url, timeout=180)
+            r = requests.get(url, headers=headers, params=params, timeout=180)
             r.raise_for_status()
             out.write_bytes(r.content)
             time.sleep(2)  # Small delay between successful requests
