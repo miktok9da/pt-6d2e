@@ -25,8 +25,8 @@ def upload_file_to_tmpfiles(file_path):
         data = response.json()
         if data.get('status') == 'success':
             url = data['data']['url']
-            # Convert to direct download link: https://tmpfiles.org/12345 -> https://tmpfiles.org/dl/12345
-            dl_url = url.replace('https://tmpfiles.org/', 'https://tmpfiles.org/dl/')
+            # Convert to direct download link and ensure HTTPS
+            dl_url = url.replace('tmpfiles.org/', 'tmpfiles.org/dl/').replace('http://', 'https://')
             print(f"[facebook] File uploaded: {dl_url}")
             return dl_url
         else:
@@ -65,9 +65,7 @@ def upload_to_facebook(video_file, description):
         'description': description,
         'title': 'História das Mulheres Antigas',  # Updated to Portuguese
         'file_url': video_url,
-        'is_explicit_share': True,
-        'timeline_visibility': 'normal',
-        'upload_phase': 'start'
+        'is_explicit_share': True
     }
     
     print("[facebook] Initiating upload via URL...")

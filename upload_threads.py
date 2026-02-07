@@ -31,8 +31,8 @@ def upload_file_to_tmpfiles(file_path):
         data = response.json()
         if data.get('status') == 'success':
             url = data['data']['url']
-            # Convert to direct download link: https://tmpfiles.org/12345 -> https://tmpfiles.org/dl/12345
-            dl_url = url.replace('https://tmpfiles.org/', 'https://tmpfiles.org/dl/')
+            # Convert to direct download link and ensure HTTPS
+            dl_url = url.replace('tmpfiles.org/', 'tmpfiles.org/dl/').replace('http://', 'https://')
             print(f"[threads] File uploaded: {dl_url}")
             return dl_url
         else:
