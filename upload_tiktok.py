@@ -19,19 +19,22 @@ def upload_file_to_tmpfiles(file_path):
     
     with open(file_path, 'rb') as f:
         response = requests.post(
-            'https://tmpfiles.org/api/upload',
-            files={'file': f}
+            'https://tmpfiles.org/api/v1/upload',
+            files={'file': (Path(file_path).name, f, 'video/mp4')}
         )
     
     if response.status_code == 200:
         data = response.json()
-        url = data['data']['url']
-        # Convert to direct download link
-        dl_url = url.replace('https://tmpfiles.org/', 'https://tmpfiles.org/dl/')
-        print(f"[tiktok] File uploaded: {dl_url}")
-        return dl_url
+        if data.get('status') == 'success':
+            url = data['data']['url']
+            # Convert to direct download link: https://tmpfiles.org/12345 -> https://tmpfiles.org/dl/12345
+            dl_url = url.replace('https://tmpfiles.org/', 'https://tmpfiles.org/dl/')
+            print(f"[tiktok] File uploaded: {dl_url}")
+            return dl_url
+        else:
+            raise Exception(f"tmpfiles.org returned error status: {data}")
     else:
-        raise Exception(f"Failed to upload to tmpfiles.org: {response.text}")
+        raise Exception(f"Failed to upload to tmpfiles.org: {response.status_code} - {response.text}")
 
 
 def check_tiktok_upload_status(publish_id, access_token):

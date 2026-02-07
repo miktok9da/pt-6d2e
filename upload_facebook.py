@@ -17,19 +17,22 @@ def upload_file_to_tmpfiles(file_path):
     
     with open(file_path, 'rb') as f:
         response = requests.post(
-            'https://tmpfiles.org/api/upload',
-            files={'file': f}
+            'https://tmpfiles.org/api/v1/upload',
+            files={'file': (Path(file_path).name, f, 'video/mp4')}
         )
     
     if response.status_code == 200:
         data = response.json()
-        url = data['data']['url']
-        # Convert to direct download link
-        dl_url = url.replace('https://tmpfiles.org/', 'https://tmpfiles.org/dl/')
-        print(f"[facebook] File uploaded: {dl_url}")
-        return dl_url
+        if data.get('status') == 'success':
+            url = data['data']['url']
+            # Convert to direct download link: https://tmpfiles.org/12345 -> https://tmpfiles.org/dl/12345
+            dl_url = url.replace('https://tmpfiles.org/', 'https://tmpfiles.org/dl/')
+            print(f"[facebook] File uploaded: {dl_url}")
+            return dl_url
+        else:
+            raise Exception(f"tmpfiles.org returned error status: {data}")
     else:
-        raise Exception(f"Failed to upload to tmpfiles.org: {response.text}")
+        raise Exception(f"Failed to upload to tmpfiles.org: {response.status_code} - {response.text}")
 
 
 def upload_to_facebook(video_file, description):
@@ -55,7 +58,7 @@ def upload_to_facebook(video_file, description):
         raise Exception(f"Failed to upload video to temporary hosting: {e}")
     
     # Upload video using the temporary URL
-    url = f"https://graph.facebook.com/v18.0/{page_id}/videos"
+    url = f"https://graph.facebook.com/v24.0/{page_id}/videos"
     
     params = {
         'access_token': access_token,
@@ -86,7 +89,7 @@ def upload_to_facebook(video_file, description):
     time.sleep(10)  # Give Facebook some time to process
     
     # Check if the video is ready
-    check_url = f"https://graph.facebook.com/v18.0/{video_id}"
+    check_url = f"https://graph.facebook.com/v24.0/{video_id}"
     check_params = {
         'access_token': access_token,
         'fields': 'status'
@@ -108,7 +111,7 @@ def upload_to_facebook(video_file, description):
                             print(f"[facebook] ✅ Upload completed successfully!")
                             
                             # Create a post with the video
-                            post_url = f"https://graph.facebook.com/v18.0/{page_id}/feed"
+                            post_url = f"https://graph.facebook.com/v24.0/{page_id}/feed"
                             post_params = {
                                 'access_token': access_token,
                                 'attached_media[0]': f'{{"media_fbid":"{video_id}"}}',
