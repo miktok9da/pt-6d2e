@@ -2,39 +2,48 @@
 Generate 600 Portuguese topics about ancient women's history.
 """
 
+import os
 import requests
 from urllib.parse import quote
 from pathlib import Path
+from dotenv import load_dotenv
 import time
+
+load_dotenv()
 
 def generate_french_topics_batch(batch_num, count=100):
     """Generate a batch of Portuguese topics."""
     
-    base_url = "https://text.pollinations.ai/"
+    api_key = os.getenv("POLLINATIONS_API_KEY")
+    if not api_key:
+        print(f"[batch {batch_num}] Error: POLLINATIONS_API_KEY not found in .env")
+        return []
     
-    # Simpler system prompt
-    system = (
-        "You are a historian specialized in ancient women's history. "
-        f"Create {count} unique topics in Portuguese about women in ancient civilizations. "
-        "Each topic should be 5-10 words, interesting and educational. "
-        "Cover: laws, customs, famous women, professions, religion, culture, art. "
-        "Output ONLY the topics, one per line, no numbers or bullets."
-    )
+    headers = {"Authorization": f"Bearer {api_key}"}
+    payload = {
+        "model": "openai",
+        "messages": [
+            {"role": "system", "content": system},
+            {"role": "user", "content": prompt}
+        ],
+        "temperature": 0.9,
+        "jsonMode": False
+    }
     
-    prompt = f"Generate {count} unique Portuguese topics about women in ancient civilizations"
-    
-    url = base_url + quote(prompt)
-    params = {"model": "openai", "temperature": 0.9, "system": system}
+    url = "https://gen.pollinations.ai/v1/chat/completions"
     
     print(f"[batch {batch_num}] Generating {count} Portuguese topics...")
     
     try:
-        r = requests.get(url, params=params, timeout=120)
+        r = requests.post(url, headers=headers, json=payload, timeout=120)
         r.raise_for_status()
+        
+        # Parse topics from chat completions response
+        content = r.json()['choices'][0]['message']['content'].strip()
         
         # Parse topics
         topics = []
-        for line in r.text.strip().split('\n'):
+        for line in content.split('\n'):
             cleaned = line.strip()
             # Remove common prefixes
             for prefix in ['- ', '* ', '• ', '→ ', '> ']:

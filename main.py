@@ -69,19 +69,22 @@ def generate_story_with_pollinations(topic: str) -> str:
     )
     prompt = f"Assunto: {topic}. Conte um fato histórico interessante."
 
-    url = f"https://gen.pollinations.ai/text/{quote(prompt)}"
-    headers = {"Authorization": f"Bearer {api_key}"}
-    params = {
-        "model": "nova-fast",
-        "temperature": 1.0,
-        "system": system,
-        "json": False
-    }
-
     print(f"[story] Generating Portuguese story for topic: {topic}")
-    r = requests.get(url, headers=headers, params=params, timeout=60)
+    
+    payload = {
+        "model": "openai",
+        "messages": [
+            {"role": "system", "content": system},
+            {"role": "user", "content": prompt}
+        ],
+        "temperature": 1.0,
+        "jsonMode": False
+    }
+    
+    url = "https://gen.pollinations.ai/v1/chat/completions"
+    r = requests.post(url, headers=headers, json=payload, timeout=60)
     r.raise_for_status()
-    text = r.text.strip()
+    text = r.json()['choices'][0]['message']['content'].strip()
 
     words = text.split()
     if len(words) > STORY_MAX_WORDS:
@@ -152,14 +155,13 @@ def generate_image(scene: str, idx: int) -> Path:
     safe_prompt = quote(prompt)
     
     # Build URL with enhanced parameters for photorealism and safety
-    url = f"https://image.pollinations.ai/prompt/{safe_prompt}"
+    url = f"https://gen.pollinations.ai/image/{safe_prompt}"
     headers = {"Authorization": f"Bearer {os.getenv('POLLINATIONS_API_KEY')}"}
     params = {
         "width": IMAGE_WIDTH,
         "height": IMAGE_HEIGHT,
-        "model": "flux",  # Use flux model
+        "model": IMAGE_MODEL,  # Use klein-large model
         "seed": seed,
-        "safe": True,  # Enable strict content filtering to prevent NSFW (boolean)
         "nologo": True,  # Explicitly request no watermarks
         "negative_prompt": "worst quality, blurry, watermark, logo, text, signature, branded content, inappropriate, revealing, suggestive, nude, sexual, violence, blood, gore"
     }
