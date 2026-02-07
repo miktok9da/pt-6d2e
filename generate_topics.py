@@ -44,6 +44,7 @@ def generate_new_topics(count=100):
     }
     
     url = "https://gen.pollinations.ai/v1/chat/completions"
+    headers = {"Authorization": f"Bearer {api_key}"}
     print(f"[topics] Generating {count} new Portuguese topics...")
     r = requests.post(url, headers=headers, json=payload, timeout=120)
     r.raise_for_status()

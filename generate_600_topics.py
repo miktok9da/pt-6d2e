@@ -19,6 +19,17 @@ def generate_french_topics_batch(batch_num, count=100):
         print(f"[batch {batch_num}] Error: POLLINATIONS_API_KEY not found in .env")
         return []
     
+    # Simpler system prompt
+    system = (
+        "You are a historian specialized in ancient women's history. "
+        f"Create {count} unique topics in Portuguese about women in ancient civilizations. "
+        "Each topic should be 5-10 words, interesting and educational. "
+        "Cover: laws, customs, famous women, professions, religion, culture, art. "
+        "Output ONLY the topics, one per line, no numbers or bullets."
+    )
+    
+    prompt = f"Generate {count} unique Portuguese topics about women in ancient civilizations"
+    
     headers = {"Authorization": f"Bearer {api_key}"}
     payload = {
         "model": "openai",
