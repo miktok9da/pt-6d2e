@@ -92,11 +92,3 @@ jobs:
         VK_GROUP_ID: ${{ secrets.VK_GROUP_ID }}
       run: |
         python upload_all_platforms.py
-
-    - name: Upload video artifact (backup)
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: final-video-${{ github.run_number }}
-        path: output/final_video.mp4
-        retention-days: 7
