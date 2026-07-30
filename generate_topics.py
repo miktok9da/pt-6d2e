@@ -46,7 +46,16 @@ def generate_new_topics(count=100):
     url = "https://gen.pollinations.ai/v1/chat/completions"
     headers = {"Authorization": f"Bearer {api_key}"}
     print(f"[topics] Generating {count} new Portuguese topics...")
-    r = requests.post(url, headers=headers, json=payload, timeout=120)
+    for _attempt in range(3):
+        try:
+            r = requests.post(url, headers=headers, json=payload, timeout=180)
+            break
+        except Exception as e:
+            print(f"[topics] Attempt failed: {e}")
+            if _attempt < 2:
+                import time; time.sleep((_attempt+1)*10)
+            else:
+                raise
     r.raise_for_status()
     
     # Parse topics from chat completions response
