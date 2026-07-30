@@ -7,85 +7,33 @@ import sys
 import json
 import requests
 def get_video_title():
-    """Read the generated story and use first sentence as title."""
+    """Bilingual title: English topic | native first sentence."""
     try:
         story_file = Path("output/story.txt")
+        native_title = ""
         if story_file.exists():
             story = story_file.read_text(encoding="utf-8")
-            first_sentence = story.split(".")[0] if "." in story else story[:80]
-            title = first_sentence[:57] + "..." if len(first_sentence) > 60 else first_sentence
-            return title.strip()
+            first = story.split(".")[0] if "." in story else story[:80]
+            native_title = first[:57] + "..." if len(first) > 60 else first
+        
+        topic = ""
+        try:
+            meta = Path("output/metadata.json")
+            if meta.exists():
+                import json
+                topic = json.loads(meta.read_text(encoding="utf-8")).get("category_english", "")
+        except:
+            pass
+        
+        if topic and native_title:
+            return f"{topic} | {native_title}"
+        elif native_title:
+            return native_title
+        elif topic:
+            return topic
+        return ""
     except Exception:
-        pass
-    return ""
-
-from pathlib import Path
-from datetime import datetime
-from dotenv import load_dotenv
-
-load_dotenv()
-
-upload_dir = Path(__file__).parent / "upload"
-if upload_dir.exists() and str(upload_dir) not in sys.path:
-    sys.path.insert(0, str(upload_dir))
-
-upload_to_facebook = None
-upload_to_instagram = None
-upload_to_youtube = None
-upload_to_vk = None
-upload_to_telegram = None
-upload_to_twitter = None
-upload_to_threads = None
-upload_to_tiktok = None
-
-try:
-    from upload_facebook import upload_to_facebook as fb_upload
-    upload_to_facebook = fb_upload
-except ImportError as e:
-    print(f"[!] Facebook upload module not available: {e}")
-
-try:
-    from upload_instagram import upload_to_instagram as ig_upload
-    upload_to_instagram = ig_upload
-except ImportError as e:
-    print(f"[!] Instagram upload module not available: {e}")
-
-try:
-    from upload_to_youtube import upload_to_youtube as yt_upload
-    upload_to_youtube = yt_upload
-except ImportError as e:
-    print(f"[!] YouTube upload module not available: {e}")
-
-try:
-    from upload_vk import upload_to_vk as vk_upload
-    upload_to_vk = vk_upload
-except ImportError as e:
-    print(f"[!] VK upload module not available: {e}")
-
-try:
-    from upload_telegram import upload_to_telegram as tg_upload
-    upload_to_telegram = tg_upload
-except ImportError as e:
-    print(f"[!] Telegram upload module not available: {e}")
-
-try:
-    from upload_twitter import upload_to_twitter as tw_upload
-    upload_to_twitter = tw_upload
-except ImportError as e:
-    print(f"[!] Twitter upload module not available: {e}")
-
-try:
-    from upload_threads import upload_to_threads as th_upload
-    upload_to_threads = th_upload
-except ImportError as e:
-    print(f"[!] Threads upload module not available: {e}")
-
-try:
-    from upload_tiktok import upload_to_tiktok as tk_upload
-    upload_to_tiktok = tk_upload
-except ImportError as e:
-    print(f"[!] TikTok upload module not available: {e}")
-
+        return ""
 
 def get_latest_reel():
     # Check for direct final_video.mp4 first
