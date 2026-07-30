@@ -1,11 +1,11 @@
 """
-VELOCITY VIETNAMESE - Unified Social Media Upload Script
 Uploads generated reels to all connected social media platforms
 """
 
 import os
 import sys
 import json
+import requests
 from pathlib import Path
 from datetime import datetime
 from dotenv import load_dotenv
@@ -97,63 +97,92 @@ def get_latest_reel():
     return {
         "video_path": str(latest),
         "metadata": metadata,
-        "category": metadata.get("category_english", "Vietnamese Learning"),
+        "category": metadata.get("category_english", "success Learning"),
         "phrases": metadata.get("phrases", [])
     }
 
 
+POLLINATIONS_API_KEY = os.environ.get("POLLINATIONS_API_KEY")
+
+
 def generate_caption(phrases, category, platform="facebook"):
+    ai_text = call_pollinations_for_caption(category, platform, phrases)
+    parts = ai_text.split("|")
+    ai_caption = parts[0].strip() if len(parts) > 0 else ""
+    ai_hashtags = parts[1].strip() if len(parts) > 1 else ""
+
+    caption_lines = [ai_caption, ""]
     if platform == "facebook":
-        caption_lines = [
-            f"Learn Vietnamese with VELOCITY VIETNAMESE!",
-            f"",
-            f"Category: {category}",
-            f"",
-            f"Master Vietnamese one phrase at a time! Today's {category} lesson:",
-            f""
-        ]
+        caption_lines.append(f"{category}")
+        caption_lines.append("")
         emojis = ["1", "2", "3", "4", "5"]
         for i, phrase in enumerate(phrases[:5], 0):
             emoji = emojis[i] if i < len(emojis) else f"{i+1}."
             caption_lines.append(f"{emoji}. {phrase['english']}")
-            caption_lines.append(f"   {phrase.get('vietnamese', '')}")
+            caption_lines.append(f"   {phrase.get('success', '')}")
             caption_lines.append(f"   [{phrase.get('transliteration', '')}]")
             caption_lines.append("")
-        caption_lines.extend([
-            f"Tip: Repeat each phrase out loud 3 times!",
-            f"Like this video if you learned something new!",
-            f"Comment your favorite phrase below!",
-            f"Follow for daily Vietnamese lessons!",
-            f"",
-        ])
-        hashtags = [
-            "#learnvietnamese", "#vietnameselessons", "#vietnameseforbeginners",
-            "#languagelearning", "#vietnamesevocabulary", "#velocityvietnamese",
-            "#dailyvietnamese", "#vietnamese", "#learnlanguages",
-            "#vietnameseteacher", "#speakvietnamese", "#vietnamesepractice",
-            "#bilingual", "#vietnamesewords", "#languagetips"
-        ]
-        caption_lines.extend(hashtags)
     else:
-        caption_lines = [
-            f"Learn Vietnamese with VELOCITY VIETNAMESE!",
-            f"",
-            f"Category: {category}",
-            f"",
-            f"Today's phrases:",
-            f""
-        ]
+        caption_lines.append(f"{category}")
+        caption_lines.append("")
+        caption_lines.append(f"Today's phrases:")
+        caption_lines.append("")
         for i, phrase in enumerate(phrases[:3], 1):
             caption_lines.append(f"{i}. {phrase['english']}")
-            caption_lines.append(f"   -> {phrase.get('vietnamese', '')}")
+            caption_lines.append(f"   -> {phrase.get('success', '')}")
             caption_lines.append("")
-        hashtags = [
-            "#learnvietnamese", "#vietnameselessons", "#vietnameseforbeginners",
-            "#languagelearning", "#vietnamesevocabulary", "#velocityvietnamese",
-            "#dailyvietnamese", "#vietnamese", "#learnlanguages", "#vietnameseteacher"
-        ]
-        caption_lines.extend(hashtags)
+    if ai_hashtags:
+        caption_lines.append(ai_hashtags)
     return "\n".join(caption_lines)
+
+
+def call_pollinations_for_caption(category, platform, phrases=None):
+    if not POLLINATIONS_API_KEY:
+        return ""
+
+    prompt = (
+        f"Generate a short social media caption for a short video about {category}. "
+        f"Write it for {platform}. "
+        f"The caption should have a hook, a short description, and a call to action. "
+        f"Do NOT use any placeholder or generic filler text. "
+        f"Separate the caption body from 3-5 relevant hashtags with a pipe | character. "
+        f"Just output: caption body | hashtag1 hashtag2 hashtag3"
+    )
+
+    for attempt in range(3):
+        try:
+            resp = requests.post(
+                "https://text.pollinations.ai/",
+                json={
+                    "messages": [
+                        {"role": "user", "content": prompt}
+                    ],
+                    "model": "openai",
+                    "temperature": 0.8,
+                    "max_tokens": 300,
+                },
+                headers={
+                    "Authorization": f"Bearer {POLLINATIONS_API_KEY}",
+                    "Content-Type": "application/json",
+                },
+                timeout=180,
+            )
+            if resp.status_code == 200:
+                text = resp.json().get("choices", [{}])[0].get("message", {}).get("content", "")
+                text = resp.json().get("content", text)
+                text = text.strip().strip('"')
+                if text:
+                    return text
+            elif resp.status_code == 429:
+                import time as _time
+                _time.sleep(10 * (attempt + 1))
+                continue
+        except Exception as e:
+            if attempt < 2:
+                import time as _time
+                _time.sleep(5)
+                continue
+    return ""
 
 
 def upload_to_all_platforms(video_path, caption, category, phrases=None):
@@ -169,7 +198,7 @@ def upload_to_all_platforms(video_path, caption, category, phrases=None):
     }
 
     print("\n" + "=" * 80)
-    print("VELOCITY VIETNAMESE - MULTI-PLATFORM UPLOAD")
+    print("MULTI-PLATFORM UPLOAD")
     print("=" * 80)
     print(f"Video: {video_path}")
     print(f"Category: {category}")
@@ -261,7 +290,7 @@ def upload_to_all_platforms(video_path, caption, category, phrases=None):
 
 def main():
     print("\n" + "=" * 80)
-    print("VELOCITY VIETNAMESE - AUTOMATED UPLOAD")
+    print("AUTOMATED UPLOAD")
     print("=" * 80)
 
     reel = get_latest_reel()
