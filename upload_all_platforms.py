@@ -77,7 +77,7 @@ except ImportError as e:
 def get_video_title():
     """Use first sentence of story as title. Bilingual if English topic available."""
     try:
-        story_file = Path("output/story.txt")
+        story_file = Path("output/story_en.txt")
         native_title = ""
         if story_file.exists():
             story = story_file.read_text(encoding="utf-8")
@@ -130,20 +130,35 @@ def get_latest_reel():
     }
 
 
+
 def generate_caption(phrases, category, platform="facebook"):
-    """Use the actual story text as caption."""
-    story_text = ""
+    """Bilingual caption: English + native language."""
+    en_text = ""
+    native_text = ""
     try:
-        story_file = Path("output/story.txt")
-        if story_file.exists():
-            story_text = story_file.read_text(encoding="utf-8").strip()
-    except Exception:
-        pass
+        en_file = Path("output/story_en.txt")
+        if en_file.exists():
+            en_text = en_file.read_text(encoding="utf-8").strip()
+    except: pass
+    try:
+        native_file = Path("output/story.txt")
+        if native_file.exists():
+            native_text = native_file.read_text(encoding="utf-8").strip()
+    except: pass
 
-    if not story_text:
-        story_text = f"Learn about {category}"
+    caption_body = ""
+    if en_text and native_text:
+        caption_body = en_text + "
 
-    caption_lines = [story_text, ""]
+" + native_text
+    elif en_text:
+        caption_body = en_text
+    elif native_text:
+        caption_body = native_text
+    else:
+        caption_body = f"Learn about {category}"
+
+    caption_lines = [caption_body, ""]
     caption_lines.append(f"{category}")
     caption_lines.append("")
 
@@ -164,7 +179,9 @@ def generate_caption(phrases, category, platform="facebook"):
 
     hashtag = f"#{category.replace(' ', '')}" if category else "#History"
     caption_lines.append(f"{hashtag} #Success #Motivation")
-    return "\n".join(caption_lines)
+    return "
+".join(caption_lines)
+
 
 
 def upload_to_all_platforms(video_path, caption, category, phrases=None, video_title=""):

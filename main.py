@@ -441,6 +441,7 @@ def main():
 
     # 1. Generate story with Pollinations AI
     story = generate_story_with_pollinations(topic)
+    story_en = generate_english_story(topic)
     
     # 2. Generate unique scene descriptions from the story
     scenes = generate_scene_descriptions(story)
