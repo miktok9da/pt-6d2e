@@ -136,53 +136,37 @@ def generate_caption(phrases, category, platform="facebook"):
     return "\n".join(caption_lines)
 
 
+
 def call_pollinations_for_caption(category, platform, phrases=None):
-    if not POLLINATIONS_API_KEY:
+    api_key = os.environ.get("POLLINATIONS_API_KEY")
+    if not api_key:
         return ""
-
-    prompt = (
-        f"Generate a short social media caption for a short video about {category}. "
-        f"Write it for {platform}. "
-        f"The caption should have a hook, a short description, and a call to action. "
-        f"Do NOT use any placeholder or generic filler text. "
-        f"Separate the caption body from 3-5 relevant hashtags with a pipe | character. "
-        f"Just output: caption body | hashtag1 hashtag2 hashtag3"
-    )
-
+    from urllib.parse import quote
+    system = "You are a social media content creator. Write engaging short captions for short videos."
+    prompt = f"Write a short social media caption (max 200 chars) for a video about {category}. Platform: {platform}. Just the caption text, no hashtags."
+    url = f"https://gen.pollinations.ai/text/{quote(prompt)}"
+    headers = {"Authorization": f"Bearer {api_key}"}
+    params = {"model": "nova-fast", "temperature": 0.8, "system": system, "json": False}
     for attempt in range(3):
         try:
-            resp = requests.post(
-                "https://text.pollinations.ai/",
-                json={
-                    "messages": [
-                        {"role": "user", "content": prompt}
-                    ],
-                    "model": "openai",
-                    "temperature": 0.8,
-                    "max_tokens": 300,
-                },
-                headers={
-                    "Authorization": f"Bearer {POLLINATIONS_API_KEY}",
-                    "Content-Type": "application/json",
-                },
-                timeout=180,
-            )
-            if resp.status_code == 200:
-                text = resp.json().get("choices", [{}])[0].get("message", {}).get("content", "")
-                text = resp.json().get("content", text)
-                text = text.strip().strip('"')
-                if text:
-                    return text
-            elif resp.status_code == 429:
-                import time as _time
-                _time.sleep(10 * (attempt + 1))
-                continue
+            r = requests.get(url, headers=headers, params=params, timeout=180)
+            r.raise_for_status()
+            text = r.text.strip().strip('"')
+            if text:
+                tag_url = f"https://gen.pollinations.ai/text/{quote('Generate 5 relevant hashtags for a video about: ' + category + '. Return them space-separated with # prefix.')}"
+                tag_params = {"model": "nova-fast", "temperature": 0.5, "system": "Hashtag generator", "json": False}
+                tr = requests.get(tag_url, headers=headers, params=tag_params, timeout=60)
+                if tr.status_code == 200:
+                    hashtags = tr.text.strip()
+                    return f"{text}|{hashtags}"
+                return f"{text}|"
         except Exception as e:
             if attempt < 2:
                 import time as _time
-                _time.sleep(5)
+                _time.sleep(10 * (attempt + 1))
                 continue
     return ""
+
 
 
 def upload_to_all_platforms(video_path, caption, category, phrases=None):
