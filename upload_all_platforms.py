@@ -6,6 +6,19 @@ import os
 import sys
 import json
 import requests
+def get_video_title():
+    """Read the generated story and use first sentence as title."""
+    try:
+        story_file = Path("output/story.txt")
+        if story_file.exists():
+            story = story_file.read_text(encoding="utf-8")
+            first_sentence = story.split(".")[0] if "." in story else story[:80]
+            title = first_sentence[:57] + "..." if len(first_sentence) > 60 else first_sentence
+            return title.strip()
+    except Exception:
+        pass
+    return ""
+
 from pathlib import Path
 from datetime import datetime
 from dotenv import load_dotenv
@@ -216,7 +229,7 @@ def upload_to_all_platforms(video_path, caption, category, phrases=None):
                 elif platform_name == "instagram":
                     upload_result = upload_func(video_path, caption)
                 elif platform_name == "youtube":
-                    upload_result = upload_func(video_path, category, caption, ["history", "ancient", category.lower().replace(" ", "")])
+                    upload_result = upload_func(video_path, video_title, caption, ["history", "ancient", category.lower().replace(" ", "")])
                 elif platform_name == "vk":
                     upload_result = upload_func(video_path, caption)
                 elif platform_name == "telegram":
@@ -287,6 +300,7 @@ def main():
     print(f"   Video: {reel['video_path']}")
     print(f"   Phrases: {len(reel['phrases'])}")
 
+    video_title = get_video_title() or reel['category']
     caption = generate_caption(reel['phrases'], reel['category'], platform="facebook")
     print(f"\nGenerated caption ({len(caption)} chars):")
     print("-" * 80)
