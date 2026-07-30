@@ -56,46 +56,47 @@ def choose_topic_for_today():
     return topics[today.toordinal() % len(topics)]
 
 def generate_story_with_pollinations(topic: str) -> str:
-    """Generate a short Portuguese story about ancient women's history using paid Pollinations API."""
     api_key = os.getenv("POLLINATIONS_API_KEY")
     if not api_key:
         raise ValueError("POLLINATIONS_API_KEY environment variable is required for paid API")
-
     system = (
-        "Você é um historiador especializado na história das mulheres nas civilizações antigas. "
-        "Escreva uma história curta e interessante de 30 segundos (80-130 palavras) em português. "
-        "Conte fatos históricos reais, leis, costumes ou tradições. "
-        "Use um estilo vivo e cativante. Sem títulos."
+        "Eres un historiador especializado en la historia de las mujeres en las civilizaciones antiguas. "
+        "Escribe una historia corta e interesante de 30 segundos (80-130 palabras) en espanol. "
+        "Cuenta hechos historicos reales, leyes, costumbres o tradiciones. "
+        "Usa un estilo vivo y cautivador. Sin titulos."
     )
-    prompt = f"Assunto: {topic}. Conte um fato histórico interessante."
-
-    print(f"[story] Generating Portuguese story for topic: {topic}")
-    
-    payload = {
-        "model": "openai",
-        "messages": [
-            {"role": "system", "content": system},
-            {"role": "user", "content": prompt}
-        ],
-        "temperature": 1.0,
-        "jsonMode": False
-    }
-    
-    url = "https://gen.pollinations.ai/v1/chat/completions"
+    prompt = f"Tema: {topic}. Cuenta un hecho historico interesante."
+    url = f"https://gen.pollinations.ai/text/{quote(prompt)}"
     headers = {"Authorization": f"Bearer {api_key}"}
-    r = requests.post(url, headers=headers, json=payload, timeout=180)
-    r.raise_for_status()
-    text = r.json()['choices'][0]['message']['content'].strip()
-
-    words = text.split()
-    if len(words) > STORY_MAX_WORDS:
-        text = " ".join(words[:STORY_MAX_WORDS])
-
-    with open(STORY_FILE, "w", encoding="utf-8") as f:
-        f.write(text)
-
-    print(f"[story] Portuguese story generated ({len(text.split())} words)")
-    return text
+    params = {
+        "model": "nova-fast",
+        "temperature": 1.0,
+        "system": system,
+        "json": False
+    }
+    print(f"[story] Generating Spanish story for topic: {topic}")
+    last_error = None
+    for attempt in range(3):
+        try:
+            r = requests.get(url, headers=headers, params=params, timeout=180)
+            r.raise_for_status()
+            text = r.text.strip()
+            words = text.split()
+            if len(words) > STORY_MAX_WORDS:
+                text = " ".join(words[:STORY_MAX_WORDS])
+            with open(STORY_FILE, "w", encoding="utf-8") as f:
+                f.write(text)
+            print(f"[story] Spanish story generated ({len(text.split())} words)")
+            return text
+        except Exception as e:
+            last_error = e
+            if attempt < 2:
+                wait = 10 * (attempt + 1)
+                print(f"[story] API attempt {attempt + 1} failed: {e}. Retrying in {wait}s...")
+                import time as _time
+                _time.sleep(wait)
+                continue
+    raise RuntimeError(f"Failed to generate story after 3 attempts: {last_error}")
 
 def generate_scene_descriptions(story: str) -> list:
     """Extract distinct scene descriptions from the story sentences."""
