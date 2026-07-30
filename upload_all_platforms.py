@@ -118,16 +118,27 @@ def get_latest_reel():
 POLLINATIONS_API_KEY = os.environ.get("POLLINATIONS_API_KEY")
 
 
-def generate_caption(phrases, category, platform="facebook"):
-    ai_text = call_pollinations_for_caption(category, platform, phrases)
-    parts = ai_text.split("|")
-    ai_caption = parts[0].strip() if len(parts) > 0 else ""
-    ai_hashtags = parts[1].strip() if len(parts) > 1 else ""
 
-    caption_lines = [ai_caption, ""]
+def generate_caption(phrases, category, platform="facebook"):
+    story_text = ""
+    try:
+        story_file = Path("output/story.txt")
+        if story_file.exists():
+            story_text = story_file.read_text(encoding="utf-8").strip()
+    except Exception:
+        pass
+
+    caption_body = ""
+    if story_text:
+        caption_body = story_text
+    else:
+        caption_body = f"Learn about {category}"
+
+    caption_lines = [caption_body, ""]
+    caption_lines.append(f"{category}")
+    caption_lines.append("")
+
     if platform == "facebook":
-        caption_lines.append(f"{category}")
-        caption_lines.append("")
         emojis = ["1", "2", "3", "4", "5"]
         for i, phrase in enumerate(phrases[:5], 0):
             emoji = emojis[i] if i < len(emojis) else f"{i+1}."
@@ -136,49 +147,15 @@ def generate_caption(phrases, category, platform="facebook"):
             caption_lines.append(f"   [{phrase.get('transliteration', '')}]")
             caption_lines.append("")
     else:
-        caption_lines.append(f"{category}")
-        caption_lines.append("")
-        caption_lines.append(f"Today's phrases:")
-        caption_lines.append("")
+        caption_lines.append("Today's phrases:")
         for i, phrase in enumerate(phrases[:3], 1):
             caption_lines.append(f"{i}. {phrase['english']}")
             caption_lines.append(f"   -> {phrase.get('success', '')}")
             caption_lines.append("")
-    if ai_hashtags:
-        caption_lines.append(ai_hashtags)
-    return "\n".join(caption_lines)
 
-
-
-def call_pollinations_for_caption(category, platform, phrases=None):
-    api_key = os.environ.get("POLLINATIONS_API_KEY")
-    if not api_key:
-        return ""
-    from urllib.parse import quote
-    system = "You are a social media content creator. Write engaging short captions for short videos."
-    prompt = f"Write a short social media caption (max 200 chars) for a video about {category}. Platform: {platform}. Just the caption text, no hashtags."
-    url = f"https://gen.pollinations.ai/text/{quote(prompt)}"
-    headers = {"Authorization": f"Bearer {api_key}"}
-    params = {"model": "nova-fast", "temperature": 0.8, "system": system, "json": False}
-    for attempt in range(3):
-        try:
-            r = requests.get(url, headers=headers, params=params, timeout=180)
-            r.raise_for_status()
-            text = r.text.strip().strip('"')
-            if text:
-                tag_url = f"https://gen.pollinations.ai/text/{quote('Generate 5 relevant hashtags for a video about: ' + category + '. Return them space-separated with # prefix.')}"
-                tag_params = {"model": "nova-fast", "temperature": 0.5, "system": "Hashtag generator", "json": False}
-                tr = requests.get(tag_url, headers=headers, params=tag_params, timeout=60)
-                if tr.status_code == 200:
-                    hashtags = tr.text.strip()
-                    return f"{text}|{hashtags}"
-                return f"{text}|"
-        except Exception as e:
-            if attempt < 2:
-                import time as _time
-                _time.sleep(10 * (attempt + 1))
-                continue
-    return ""
+    caption_lines.append(f"#{category.replace(' ', '')} #Success #Motivation")
+    return "
+".join(caption_lines)
 
 
 
