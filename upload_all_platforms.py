@@ -154,8 +154,7 @@ def generate_caption(phrases, category, platform="facebook"):
             caption_lines.append("")
 
     caption_lines.append(f"#{category.replace(' ', '')} #Success #Motivation")
-    return "
-".join(caption_lines)
+    return "\\n".join(caption_lines)
 
 
 
