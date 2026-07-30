@@ -75,29 +75,28 @@ except ImportError as e:
 
 
 def get_video_title():
-    """Use first sentence of story as title. Bilingual if English topic available."""
+    """Bilingual title: English first sentence | native first sentence."""
     try:
-        story_file = Path("output/story_en.txt")
+        en_title = ""
+        en_file = Path("output/story_en.txt")
+        if en_file.exists():
+            en_story = en_file.read_text(encoding="utf-8")
+            en_first = en_story.split(".")[0] if "." in en_story else en_story[:80]
+            en_title = en_first[:57] + "..." if len(en_first) > 60 else en_first
+
         native_title = ""
-        if story_file.exists():
-            story = story_file.read_text(encoding="utf-8")
-            first = story.split(".")[0] if "." in story else story[:80]
-            native_title = first[:57] + "..." if len(first) > 60 else first
+        native_file = Path("output/story.txt")
+        if native_file.exists():
+            native_story = native_file.read_text(encoding="utf-8")
+            native_first = native_story.split(".")[0] if "." in native_story else native_story[:80]
+            native_title = native_first[:57] + "..." if len(native_first) > 60 else native_first
 
-        topic = ""
-        try:
-            meta = Path("output/metadata.json")
-            if meta.exists():
-                topic = json.loads(meta.read_text(encoding="utf-8")).get("category_english", "")
-        except:
-            pass
-
-        if topic and native_title:
-            return f"{topic} | {native_title}"
+        if en_title and native_title:
+            return f"{en_title} | {native_title}"
+        elif en_title:
+            return en_title
         elif native_title:
             return native_title
-        elif topic:
-            return topic
         return ""
     except Exception:
         return ""
@@ -130,27 +129,30 @@ def get_latest_reel():
     }
 
 
+def get_english_story():
+    try:
+        ef = Path("output/story_en.txt")
+        if ef.exists():
+            return ef.read_text(encoding="utf-8").strip()
+    except: pass
+    return ""
+
+def get_native_story():
+    try:
+        nf = Path("output/story.txt")
+        if nf.exists():
+            return nf.read_text(encoding="utf-8").strip()
+    except: pass
+    return ""
 
 def generate_caption(phrases, category, platform="facebook"):
     """Bilingual caption: English + native language."""
-    en_text = ""
-    native_text = ""
-    try:
-        en_file = Path("output/story_en.txt")
-        if en_file.exists():
-            en_text = en_file.read_text(encoding="utf-8").strip()
-    except: pass
-    try:
-        native_file = Path("output/story.txt")
-        if native_file.exists():
-            native_text = native_file.read_text(encoding="utf-8").strip()
-    except: pass
+    en_text = get_english_story()
+    native_text = get_native_story()
 
     caption_body = ""
     if en_text and native_text:
-        caption_body = en_text + "
-
-" + native_text
+        caption_body = en_text + "\n\n" + native_text
     elif en_text:
         caption_body = en_text
     elif native_text:
@@ -179,9 +181,7 @@ def generate_caption(phrases, category, platform="facebook"):
 
     hashtag = f"#{category.replace(' ', '')}" if category else "#History"
     caption_lines.append(f"{hashtag} #Success #Motivation")
-    return "
-".join(caption_lines)
-
+    return "\n".join(caption_lines)
 
 
 def upload_to_all_platforms(video_path, caption, category, phrases=None, video_title=""):
