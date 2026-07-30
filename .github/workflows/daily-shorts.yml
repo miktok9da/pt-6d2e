@@ -91,5 +91,29 @@ jobs:
         # VK (optional)
         VK_ACCESS_TOKEN: ${{ secrets.VK_ACCESS_TOKEN }}
         VK_GROUP_ID: ${{ secrets.VK_GROUP_ID }}
-      run: |
+
+        # YouTube
+        YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+        YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+        YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+        # Instagram (optional)
+        IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+        IG_USER_ID: ${{ secrets.IG_USER_ID }}
+        # TikTok (optional)
+        TIKTOK_ACCESS_TOKEN: ${{ secrets.TIKTOK_ACCESS_TOKEN }}
+        # Facebook (optional)
+        FB_ACCESS_TOKEN: ${{ secrets.FB_ACCESS_TOKEN }}
+        FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
+        # Threads (optional)
+        THREADS_ACCESS_TOKEN: ${{ secrets.THREADS_ACCESS_TOKEN }}
+        THREADS_USER_ID: ${{ secrets.THREADS_USER_ID }}
+        # Twitter/X (optional)
+        TWITTER_API_KEY: ${{ secrets.TWITTER_API_KEY }}
+        TWITTER_API_SECRET: ${{ secrets.TWITTER_API_SECRET }}
+        TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
+        TWITTER_ACCESS_SECRET: ${{ secrets.TWITTER_ACCESS_SECRET }}
+        # VK (optional)
+        VK_ACCESS_TOKEN: ${{ secrets.VK_ACCESS_TOKEN }}
+        VK_GROUP_ID: ${{ secrets.VK_GROUP_ID }}
+        POLLINATIONS_API_KEY: ${{ secrets.POLLINATIONS_API_KEY }}      run: |
         python upload_all_platforms.py
