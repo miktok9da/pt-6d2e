@@ -75,7 +75,7 @@ except ImportError as e:
 
 
 def get_video_title():
-    """Bilingual title: English topic | native first sentence."""
+    """Use first sentence of story as title. Bilingual if English topic available."""
     try:
         story_file = Path("output/story.txt")
         native_title = ""
@@ -167,7 +167,7 @@ def generate_caption(phrases, category, platform="facebook"):
     return "\n".join(caption_lines)
 
 
-def upload_to_all_platforms(video_path, caption, category, phrases=None):
+def upload_to_all_platforms(video_path, caption, category, phrases=None, video_title=""):
     results = {
         "timestamp": datetime.now().isoformat(),
         "category": category,
@@ -214,7 +214,8 @@ def upload_to_all_platforms(video_path, caption, category, phrases=None):
                 elif platform_name == "instagram":
                     upload_result = upload_func(video_path, caption)
                 elif platform_name == "youtube":
-                    upload_result = upload_func(video_path, category, caption, ["history", "ancient", category.lower().replace(" ", "")])
+                    yt_title = video_title or category
+                    upload_result = upload_func(video_path, yt_title, caption, ["history", "ancient", category.lower().replace(" ", "")])
                 elif platform_name == "vk":
                     upload_result = upload_func(video_path, caption)
                 elif platform_name == "telegram":
@@ -292,7 +293,7 @@ def main():
     print(caption[:500] + "..." if len(caption) > 500 else caption)
     print("-" * 80)
 
-    results = upload_to_all_platforms(reel['video_path'], caption, reel['category'], reel['phrases'])
+    results = upload_to_all_platforms(reel['video_path'], caption, reel['category'], reel['phrases'], video_title)
     results["phrases"] = reel['phrases']
 
     successful = len(results.get("platforms_successful", []))
