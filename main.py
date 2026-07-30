@@ -84,7 +84,8 @@ def generate_story_with_pollinations(topic: str) -> str:
     with open(STORY_FILE, "w", encoding="utf-8") as f:
         f.write(text)
     print(f"[story] Story generated ({len(text.split())} words)")
-    return textdef generate_scene_descriptions(story: str) -> list:
+    return text
+def generate_scene_descriptions(story: str) -> list:
     """Extract distinct scene descriptions from the story sentences."""
     print(f"[scenes] Extracting {NUM_IMAGES} unique scene descriptions...")
     
