@@ -6,6 +6,74 @@ import os
 import sys
 import json
 import requests
+from pathlib import Path
+from datetime import datetime
+from dotenv import load_dotenv
+
+load_dotenv()
+
+upload_dir = Path(__file__).parent / "upload"
+if upload_dir.exists() and str(upload_dir) not in sys.path:
+    sys.path.insert(0, str(upload_dir))
+
+upload_to_facebook = None
+upload_to_instagram = None
+upload_to_youtube = None
+upload_to_vk = None
+upload_to_telegram = None
+upload_to_twitter = None
+upload_to_threads = None
+upload_to_tiktok = None
+
+try:
+    from upload_facebook import upload_to_facebook as fb_upload
+    upload_to_facebook = fb_upload
+except ImportError as e:
+    print(f"[!] Facebook upload module not available: {e}")
+
+try:
+    from upload_instagram import upload_to_instagram as ig_upload
+    upload_to_instagram = ig_upload
+except ImportError as e:
+    print(f"[!] Instagram upload module not available: {e}")
+
+try:
+    from upload_to_youtube import upload_to_youtube as yt_upload
+    upload_to_youtube = yt_upload
+except ImportError as e:
+    print(f"[!] YouTube upload module not available: {e}")
+
+try:
+    from upload_vk import upload_to_vk as vk_upload
+    upload_to_vk = vk_upload
+except ImportError as e:
+    print(f"[!] VK upload module not available: {e}")
+
+try:
+    from upload_telegram import upload_to_telegram as tg_upload
+    upload_to_telegram = tg_upload
+except ImportError as e:
+    print(f"[!] Telegram upload module not available: {e}")
+
+try:
+    from upload_twitter import upload_to_twitter as tw_upload
+    upload_to_twitter = tw_upload
+except ImportError as e:
+    print(f"[!] Twitter upload module not available: {e}")
+
+try:
+    from upload_threads import upload_to_threads as th_upload
+    upload_to_threads = th_upload
+except ImportError as e:
+    print(f"[!] Threads upload module not available: {e}")
+
+try:
+    from upload_tiktok import upload_to_tiktok as tk_upload
+    upload_to_tiktok = tk_upload
+except ImportError as e:
+    print(f"[!] TikTok upload module not available: {e}")
+
+
 def get_video_title():
     """Bilingual title: English topic | native first sentence."""
     try:
@@ -15,16 +83,15 @@ def get_video_title():
             story = story_file.read_text(encoding="utf-8")
             first = story.split(".")[0] if "." in story else story[:80]
             native_title = first[:57] + "..." if len(first) > 60 else first
-        
+
         topic = ""
         try:
             meta = Path("output/metadata.json")
             if meta.exists():
-                import json
                 topic = json.loads(meta.read_text(encoding="utf-8")).get("category_english", "")
         except:
             pass
-        
+
         if topic and native_title:
             return f"{topic} | {native_title}"
         elif native_title:
@@ -35,8 +102,8 @@ def get_video_title():
     except Exception:
         return ""
 
+
 def get_latest_reel():
-    # Check for direct final_video.mp4 first
     fv = Path("output/final_video.mp4")
     if fv.exists():
         latest = fv
@@ -58,16 +125,13 @@ def get_latest_reel():
     return {
         "video_path": str(latest),
         "metadata": metadata,
-        "category": metadata.get("category_english", "success Learning"),
+        "category": metadata.get("category_english", "History"),
         "phrases": metadata.get("phrases", [])
     }
 
 
-POLLINATIONS_API_KEY = os.environ.get("POLLINATIONS_API_KEY")
-
-
-
 def generate_caption(phrases, category, platform="facebook"):
+    """Use the actual story text as caption."""
     story_text = ""
     try:
         story_file = Path("output/story.txt")
@@ -76,13 +140,10 @@ def generate_caption(phrases, category, platform="facebook"):
     except Exception:
         pass
 
-    caption_body = ""
-    if story_text:
-        caption_body = story_text
-    else:
-        caption_body = f"Learn about {category}"
+    if not story_text:
+        story_text = f"Learn about {category}"
 
-    caption_lines = [caption_body, ""]
+    caption_lines = [story_text, ""]
     caption_lines.append(f"{category}")
     caption_lines.append("")
 
@@ -101,9 +162,9 @@ def generate_caption(phrases, category, platform="facebook"):
             caption_lines.append(f"   -> {phrase.get('success', '')}")
             caption_lines.append("")
 
-    caption_lines.append(f"#{category.replace(' ', '')} #Success #Motivation")
+    hashtag = f"#{category.replace(' ', '')}" if category else "#History"
+    caption_lines.append(f"{hashtag} #Success #Motivation")
     return "\n".join(caption_lines)
-
 
 
 def upload_to_all_platforms(video_path, caption, category, phrases=None):
@@ -153,7 +214,7 @@ def upload_to_all_platforms(video_path, caption, category, phrases=None):
                 elif platform_name == "instagram":
                     upload_result = upload_func(video_path, caption)
                 elif platform_name == "youtube":
-                    upload_result = upload_func(video_path, video_title, caption, ["history", "ancient", category.lower().replace(" ", "")])
+                    upload_result = upload_func(video_path, category, caption, ["history", "ancient", category.lower().replace(" ", "")])
                 elif platform_name == "vk":
                     upload_result = upload_func(video_path, caption)
                 elif platform_name == "telegram":
@@ -216,7 +277,7 @@ def main():
 
     reel = get_latest_reel()
     if not reel:
-        print("\nNo reel found! Run facebook_reels_automation.py first.")
+        print("\nNo reel found!")
         sys.exit(1)
 
     print(f"\nFound latest reel:")
@@ -224,7 +285,7 @@ def main():
     print(f"   Video: {reel['video_path']}")
     print(f"   Phrases: {len(reel['phrases'])}")
 
-    video_title = get_video_title() or reel['category']
+    video_title = get_video_title() or reel["category"]
     caption = generate_caption(reel['phrases'], reel['category'], platform="facebook")
     print(f"\nGenerated caption ({len(caption)} chars):")
     print("-" * 80)
@@ -245,11 +306,9 @@ def main():
         sys.exit(0)
     elif failed > 0:
         print(f"\nAll attempted uploads failed ({failed} failed, {skipped} skipped).")
-        print("Check the error messages above and verify your credentials")
         sys.exit(1)
     else:
         print(f"\nAll uploads skipped ({skipped} skipped).")
-        print("Add credentials in GitHub Secrets to enable uploads")
         sys.exit(1)
 
 
