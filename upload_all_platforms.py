@@ -236,11 +236,11 @@ def upload_to_all_platforms(video_path, caption, category, phrases=None, video_t
                 elif platform_name == "vk":
                     upload_result = upload_func(video_path, caption)
                 elif platform_name == "telegram":
-                    upload_result = upload_func(video_path=video_path, caption=caption)
+                    upload_result = upload_func(video_path, caption)
                 elif platform_name == "twitter":
-                    upload_result = upload_func(video_path=video_path, caption=caption)
+                    upload_result = upload_func(video_path, caption)
                 elif platform_name == "threads":
-                    upload_result = upload_func(video_path=video_path, text=caption)
+                    upload_result = upload_func(video_path, caption)
                 elif platform_name == "tiktok":
                     upload_result = upload_func(video_path, video_title or category, caption)
                 if upload_result:
