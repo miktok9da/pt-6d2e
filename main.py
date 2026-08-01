@@ -67,15 +67,15 @@ def generate_story_with_pollinations(topic: str) -> str:
     prompt = f"Theme: {topic}. Tell an interesting historical fact."
     payload = {"model": "openai", "messages": [{"role": "system", "content": system}, {"role": "user", "content": prompt}], "temperature": 0.8}
     print(f"[story] Generating story for topic: {topic}")
-    for attempt in range(5):
+    for attempt in range(3):
         try:
-            r = requests.post(url, headers=headers, json=payload, timeout=300)
+            r = requests.post(url, headers=headers, json=payload, timeout=60)
             r.raise_for_status()
             break
         except Exception as e:
             print(f"[story] Attempt {attempt+1} failed: {e}")
-            if attempt < 4:
-                time.sleep((attempt+1)*20)
+            if attempt < 2:
+                time.sleep((attempt+1)*10)
     else:
         print(f"[story] WARNING: API unavailable, using fallback story")
         return f"Long ago, in the ancient world, women shaped laws, customs and daily life in remarkable ways. {topic}. Their stories of courage, skill and resilience echo through history and still inspire us today."
@@ -98,15 +98,15 @@ def generate_english_story(topic: str) -> str:
     prompt = f"Theme: {topic}. Tell an interesting historical fact in English."
     payload = {"model": "openai", "messages": [{"role": "system", "content": system}, {"role": "user", "content": prompt}], "temperature": 0.8}
     print(f"[story] Generating English story for topic: {topic}")
-    for attempt in range(5):
+    for attempt in range(3):
         try:
-            r = requests.post(url, headers=headers, json=payload, timeout=300)
+            r = requests.post(url, headers=headers, json=payload, timeout=60)
             r.raise_for_status()
             break
         except Exception as e:
             print(f"[story] Attempt {attempt+1} failed: {e}")
-            if attempt < 4:
-                time.sleep((attempt+1)*20)
+            if attempt < 2:
+                time.sleep((attempt+1)*10)
     else:
         print(f"[story] WARNING: API unavailable, using fallback English story")
         return f"Long ago, in the ancient world, women shaped laws, customs and daily life in remarkable ways. {topic}. Their stories of courage, skill and resilience echo through history and still inspire us today."
