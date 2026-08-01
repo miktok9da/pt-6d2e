@@ -1,12 +1,20 @@
 name: Daily Auto Shorts with Multi-Platform Upload
 
 on:
+  schedule:
+    - cron: "9 6 * * *"
+    - cron: "25 11 * * *"
+    - cron: "52 15 * * *"
+    - cron: "37 21 * * *"
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   generate-and-upload:
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout repo
       uses: actions/checkout@v4
@@ -23,10 +31,10 @@ jobs:
         sudo apt-get install -y ffmpeg
 
     - name: Cache Vosk Model
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: vosk-model-small-pt-0.3
-        key: vosk-pt-model-${{ runner.os }}
+        key: vosk-model-small-pt-0.3
 
     - name: Install dependencies
       run: |
@@ -68,12 +76,15 @@ jobs:
         VK_GROUP_ID: ${{ secrets.VK_GROUP_ID }}
       run: |
         python upload_all_platforms.py
-        
-    - name: Commit and push changes
+
+    - name: Commit updated topics and tracking files
       if: always()
       run: |
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
-        git add topics.txt used_images.json 2>/dev/null; git add used_topics.txt 2>/dev/null; true
-        git commit -m "Update topics: $(date)" || echo "No changes to commit"
-        git push
+        git stash --include-untracked || true
+        git pull --rebase origin main || true
+        git stash pop || true
+        git add topics.txt used_topics.txt used_images.json output/story_en.txt 2>/dev/null || true
+        git diff --staged --quiet || git commit -m "🔄 Auto-update: Track used topics and images [skip ci]"
+        git push || true

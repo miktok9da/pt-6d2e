@@ -31,6 +31,7 @@ MUSIC_FILE = AUDIO_DIR / "music.mp3"
 
 NARRATION_FILE = OUTPUT_DIR / "narration.mp3"
 STORY_FILE = OUTPUT_DIR / "story.txt"
+STORY_EN_FILE = OUTPUT_DIR / "story_en.txt"
 SCENES_FILE = OUTPUT_DIR / "scenes.txt"
 SUBS_FILE = OUTPUT_DIR / "subtitles.ass"
 ANIMATED_VIDEO = OUTPUT_DIR / "animated.mp4"
@@ -85,6 +86,37 @@ def generate_story_with_pollinations(topic: str) -> str:
         f.write(text)
     print(f"[story] Story generated ({len(text.split())} words)")
     return text
+def generate_english_story(topic: str) -> str:
+    """Generate English story using Pollinations AI."""
+    api_key = os.getenv("POLLINATIONS_API_KEY")
+    if not api_key:
+        raise ValueError("POLLINATIONS_API_KEY required")
+    url = "https://gen.pollinations.ai/v1/chat/completions"
+    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+    system = "You are a historian specialized in ancient women history. Write a short 30-second interesting story (80-130 words) in English. Tell real historical facts, laws, customs, or traditions. Use a lively, captivating style. No titles."
+    prompt = f"Theme: {topic}. Tell an interesting historical fact in English."
+    payload = {"model": "openai", "messages": [{"role": "system", "content": system}, {"role": "user", "content": prompt}], "temperature": 0.8}
+    print(f"[story] Generating English story for topic: {topic}")
+    for attempt in range(3):
+        try:
+            r = requests.post(url, headers=headers, json=payload, timeout=180)
+            r.raise_for_status()
+            break
+        except Exception as e:
+            print(f"[story] Attempt {attempt+1} failed: {e}")
+            if attempt < 2:
+                time.sleep((attempt+1)*10)
+            else:
+                raise
+    text = r.json()["choices"][0]["message"]["content"].strip()
+    words = text.split()
+    if len(words) > STORY_MAX_WORDS:
+        text = " ".join(words[:STORY_MAX_WORDS])
+    with open(STORY_EN_FILE, "w", encoding="utf-8") as f:
+        f.write(text)
+    print(f"[story] English story generated ({len(text.split())} words)")
+    return text
+
 def generate_scene_descriptions(story: str) -> list:
     """Extract distinct scene descriptions from the story sentences."""
     print(f"[scenes] Extracting {NUM_IMAGES} unique scene descriptions...")
@@ -441,7 +473,6 @@ def main():
 
     # 1. Generate story with Pollinations AI
     story = generate_story_with_pollinations(topic)
-    story_en = generate_english_story(topic)
     story_en = generate_english_story(topic)
     
     # 2. Generate unique scene descriptions from the story
