@@ -85,8 +85,7 @@ def upload_to_youtube(video_file, title, description, tags, category_id='22'):
     
     print(f"[youtube] ✅ Uploaded! Video ID: {response['id']}")
     print(f"[youtube] URL: https://youtube.com/shorts/{response['id']}")
-    
-    return response
+    return {'status': 'success', 'id': response['id'], 'platform': 'youtube', 'link': f"https://youtube.com/shorts/{response['id']}"}
 
 def main():
     """Upload the generated video to YouTube."""

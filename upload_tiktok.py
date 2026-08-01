@@ -160,7 +160,7 @@ def upload_via_file(video_file, title, description, access_token):
             
             if status == 'SUCCESS':
                 print(f"[tiktok] ✅ Upload completed successfully!")
-                return {'id': publish_id, 'status': 'published'}
+                {'id': publish_id, 'platform': 'tiktok', 'status': 'success', 'link': f"https://www.tiktok.com/@{os.getenv('TIKTOK_USERNAME', '')}/video/{publish_id}"}
             elif status == 'PROCESSING':
                 print(f"[tiktok] Still processing...")
             elif status == 'FAILED':
@@ -233,7 +233,7 @@ def upload_via_url(video_url, title, description, access_token):
             
             if status == 'SUCCESS':
                 print(f"[tiktok] ✅ Upload completed successfully!")
-                return {'id': publish_id, 'status': 'published'}
+                {'id': publish_id, 'platform': 'tiktok', 'status': 'success', 'link': f"https://www.tiktok.com/@{os.getenv('TIKTOK_USERNAME', '')}/video/{publish_id}"}
             elif status == 'PROCESSING':
                 print(f"[tiktok] Still processing...")
             elif status == 'FAILED':

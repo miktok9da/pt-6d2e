@@ -242,8 +242,7 @@ def upload_to_all_platforms(video_path, caption, category, phrases=None, video_t
                 elif platform_name == "threads":
                     upload_result = upload_func(video_path=video_path, text=caption)
                 elif platform_name == "tiktok":
-                    upload_result = upload_func(video_path, caption)
-
+                    upload_result = upload_func(video_path, video_title or category, caption)
                 if upload_result:
                     results["uploads"][platform_name] = upload_result
                     results["platforms_successful"].append(platform_name)
@@ -262,12 +261,18 @@ def upload_to_all_platforms(video_path, caption, category, phrases=None, video_t
     print("\n" + "=" * 60)
     print("UPLOAD STATUS REPORT")
     print("=" * 60)
-    for pname, pkey in [("INSTAGRAM", "instagram"), ("FACEBOOK", "facebook"), ("YOUTUBE", "youtube"),
-                          ("THREADS", "threads"), ("TIKTOK", "tiktok")]:
+    report_order = [("FACEBOOK", "facebook"), ("INSTAGRAM", "instagram"), ("YOUTUBE", "youtube"),
+                    ("TIKTOK", "tiktok"), ("THREADS", "threads"), ("TWITTER", "twitter"),
+                    ("VK", "vk"), ("TELEGRAM", "telegram")]
+    for pname, pkey in report_order:
         pinfo = results["uploads"].get(pkey, {})
-        if pinfo and pinfo.get("status") == "success":
+        if pinfo and pinfo.get("status") in ("success", "published"):
             pid = pinfo.get("id", "N/A")
-            print(f"{pname}: SUCCESS (ID: {pid})")
+            link = pinfo.get("link") or pinfo.get("url") or pinfo.get("post_url") or ""
+            if link:
+                print(f"{pname}: SUCCESS (ID: {pid}) LINK: {link}")
+            else:
+                print(f"{pname}: SUCCESS (ID: {pid})")
         elif pinfo and pinfo.get("status") == "skipped":
             print(f"{pname}: SKIPPED")
         elif pinfo:

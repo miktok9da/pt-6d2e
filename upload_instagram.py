@@ -73,7 +73,7 @@ def upload_to_instagram(video_path, caption=""):
             if pub_res.status_code in (200, 201):
                 media_id = pub_res.json().get('id', container_id)
                 print(f"[instagram] SUCCESS! Media ID: {media_id}")
-                return {'status': 'success', 'id': media_id, 'platform': 'instagram'}
+                {'status': 'success', 'id': media_id, 'platform': 'instagram', 'link': f"https://www.instagram.com/reel/{media_id}/"}
             if waited >= max_wait:
                 raise Exception(f"Publish failed after {max_wait}s")
             print("[instagram] Not ready, retrying...")

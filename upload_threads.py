@@ -158,7 +158,7 @@ def upload_to_threads(video_file, caption):
         'id': thread_id,
         'url': thread_url,
         'platform': 'threads',
-        'status': 'published'
+        'status': 'success'
     }
 
 def main():
