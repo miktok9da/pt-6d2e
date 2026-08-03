@@ -83,20 +83,13 @@ jobs:
         set +e
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
-        # Never commit files that contain merge-conflict markers
         if grep -rlE '^(<<<<<<<|=======|>>>>>>>)' topics.txt used_topics.txt used_images.json output/ 2>/dev/null; then
           echo "ERROR: conflict markers found, refusing to commit"
           exit 1
         fi
-        # Drop any invalid JSON tracking file so it is not committed broken
-        python -c "import json,os; f='used_images.json';
-if os.path.exists(f):
- try: json.load(open(f,encoding='utf-8'))
- except Exception: os.remove(f)" 2>/dev/null || true
+        python -c "import json,os; f='used_images.json'; json.load(open(f,encoding='utf-8')) if os.path.exists(f) else None" 2>/dev/null || rm -f used_images.json
         git add topics.txt used_topics.txt used_images.json output/story_en.txt 2>/dev/null
-        # Rebase with autostash; abort on conflict instead of leaving markers
         git pull --rebase --autostash origin main || { git rebase --abort 2>/dev/null; echo "WARNING: rebase failed"; }
-        # Un-stage any file that ended up with conflict markers
         git diff --cached --name-only | while read -r f; do
           if [ -f "$f" ] && grep -qE '^(<<<<<<<|=======|>>>>>>>)' "$f" 2>/dev/null; then
             echo "WARNING: un-staging conflict file $f"
