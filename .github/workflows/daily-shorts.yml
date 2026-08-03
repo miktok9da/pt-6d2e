@@ -82,9 +82,30 @@ jobs:
       run: |
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
-        git stash --include-untracked || true
-        git pull --rebase origin main || true
-        git stash pop || true
+        # Abort if any file got corrupted with merge-conflict markers (never commit garbage)
+        if grep -rlE '^(<<<<<<<|=======|>>>>>>>)' topics.txt used_topics.txt used_images.json output/ 2>/dev/null; then
+          echo "ERROR: conflict markers found in tracked files, refusing to commit"
+          exit 1
+        fi
+        # Only track & commit JSON tracking files if they are valid JSON
+        python - <<'PYEOF'
+import json, os, sys
+for f in ["used_images.json"]:
+    if os.path.exists(f):
+        try:
+            json.load(open(f, encoding="utf-8"))
+        except Exception as e:
+            print(f"WARNING: {f} is invalid JSON, skipping staging: {e}")
+            try: os.remove(f)
+            except OSError: pass
+PYEOF
         git add topics.txt used_topics.txt used_images.json output/story_en.txt 2>/dev/null || true
+        # Rebase onto latest remote, auto-stash local changes; if conflict, abort and keep going
+        git pull --rebase --autostash origin main || { git rebase --abort 2>/dev/null || true; echo "WARNING: rebase failed, committing anyway"; }
+        # Never commit files that contain conflict markers
+        if git diff --cached --name-only | xargs grep -lE '^(<<<<<<<|=======|>>>>>>>)' 2>/dev/null; then
+          echo "WARNING: staged files contain conflict markers, un-staging them"
+          git diff --cached --name-only | xargs -r git reset -q --
+        fi
         git diff --staged --quiet || git commit -m "🔄 Auto-update: Track used topics and images [skip ci]"
-        git push || true
+        git push || { sleep 5; git push; } || true
