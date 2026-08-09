@@ -1,4 +1,4 @@
-"""
+﻿"""
 Uploads generated reels to all connected social media platforms
 """
 
@@ -73,6 +73,18 @@ try:
 except ImportError as e:
     print(f"[!] TikTok upload module not available: {e}")
 
+
+def sanitize_youtube_title(title):
+    if not title:
+        return 'Shorts'
+    title = title.replace(chr(10), ' ').replace(chr(13), ' ').replace(chr(9), ' ')
+    title = ' '.join(title.split())
+    title = title.strip("|-–— ")
+    if len(title) > 100:
+        title = title[:97] + '...'
+    if not title or len(title.strip()) < 2:
+        return 'Shorts'
+    return title
 
 def get_video_title():
     """Bilingual title: English first sentence | native first sentence."""
@@ -231,7 +243,7 @@ def upload_to_all_platforms(video_path, caption, category, phrases=None, video_t
                 elif platform_name == "instagram":
                     upload_result = upload_func(video_path, caption)
                 elif platform_name == "youtube":
-                    yt_title = video_title or category
+                    yt_title = sanitize_youtube_title(video_title or category)
                     upload_result = upload_func(video_path, yt_title, caption, ["history", "ancient", category.lower().replace(" ", "")])
                 elif platform_name == "vk":
                     upload_result = upload_func(video_path, caption)
