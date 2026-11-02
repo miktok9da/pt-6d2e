@@ -2,9 +2,6 @@ name: Daily Auto Shorts with Multi-Platform Upload
 
 on:
   schedule:
-    - cron: "9 6 * * *"
-    - cron: "25 11 * * *"
-    - cron: "52 15 * * *"
     - cron: "37 21 * * *"
   workflow_dispatch:
 
