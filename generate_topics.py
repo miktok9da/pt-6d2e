@@ -34,7 +34,7 @@ def generate_new_topics(count=100):
     prompt = f"Crie {count} tópicos únicos sobre mulheres nas civilizações antigas"
     
     payload = {
-        "model": "openai",
+        "model": "openai/gpt-5.4-nano",
         "messages": [
             {"role": "system", "content": system},
             {"role": "user", "content": prompt}
